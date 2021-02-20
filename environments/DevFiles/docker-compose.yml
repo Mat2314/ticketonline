@@ -1,0 +1,46 @@
+version: "3.9"
+   
+services:
+  db:
+    image: postgres:12
+    volumes:
+      - ./volumes/postgres/:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    restart: on-failure
+  
+  django:
+    build: .
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - .:/code
+    ports:
+      - "8000:8000"
+    restart: on-failure
+    depends_on:
+      - db
+  
+  rabbitmq:
+    hostname: rabbitmq:management-alpine
+    image: rabbitmq:latest
+    restart: on-failure
+
+  celery_worker:
+    build: .
+    command: celery -A ticketonline worker -l info
+    depends_on:
+      - django 
+      - db
+      - rabbitmq
+    restart: on-failure
+  
+  celery_beat:
+    build: .
+    command: celery -A ticketonline beat -l info
+    depends_on:
+      - django
+      - db
+      - rabbitmq
+    restart: on-failure

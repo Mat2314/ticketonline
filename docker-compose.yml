@@ -1,0 +1,56 @@
+version: "3.9"
+   
+services:
+  db:
+    image: postgres:12
+    volumes:
+      - ./volumes/postgres/:/var/lib/postgresql/data
+    env_file:
+      - .env.prod
+    restart: on-failure
+  
+  django:
+    build: .
+    command: gunicorn ticketonline.wsgi:application --bind 0.0.0.0:8000
+    env_file:
+      - .env.prod
+    volumes:
+      - .:/code
+      - ./volumes/static:/code/static
+    expose:
+      - "8000"
+    restart: on-failure
+    depends_on:
+      - db
+  
+  rabbitmq:
+    hostname: rabbitmq:management-alpine
+    image: rabbitmq:latest
+    restart: on-failure
+
+  celery_worker:
+    build: .
+    command: celery -A ticketonline worker -l info
+    depends_on:
+      - django 
+      - db
+      - rabbitmq
+    restart: on-failure
+  
+  celery_beat:
+    build: .
+    command: celery -A ticketonline beat -l info
+    depends_on:
+      - django
+      - db
+      - rabbitmq
+    restart: on-failure
+
+  nginx:
+    build: ./nginx 
+    volumes:
+      - ./volumes/static:/www/static
+    ports:
+      - 8000:80
+    depends_on:
+      - django 
