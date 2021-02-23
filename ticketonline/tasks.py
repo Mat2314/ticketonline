@@ -2,6 +2,9 @@ from .celery import app
 import datetime
 import logging
 import os
+from ticketonline.apps.events.models import Reservation
+from datetime import timedelta
+import pytz
 
 now = datetime.datetime.now().strftime("%d-%m-%Y")
 logging.basicConfig(filename='logs/{now}.log', format='%(asctime)s:%(levelname)s:%(message)s\n')
@@ -38,4 +41,45 @@ def clean_old_logs():
     except Exception as e:
         print(e)
         logging.warning(e, exc_info=True)
-        return
+
+
+@app.task
+def reservation_expired():
+    """
+    Task is a worker which checks every minute whether there are any expired reservations with PENDING status
+    and if so, it changes reservation status to CANCELLED.
+    :return:
+    """
+    try:
+        # Get all pending reservations and current datetime
+        pending_reservations = Reservation.objects.filter(status="PENDING")
+        now = datetime.datetime.utcnow().replace(tzinfo=pytz.utc)
+
+        # Iterate over reservations and change their status if 15 minutes buffer has already passed
+        for reservation in pending_reservations:
+            if reservation.pending_until < now:
+                reservation.status = "CANCELLED"
+                reservation.save()
+    except Exception as e:
+        print(e)
+        logging.warning(e, exc_info=True)
+
+
+@app.task
+def remove_old_reservations():
+    """
+    Task removes reservations older than 100 days.
+    :return:
+    """
+    try:
+        reservations = Reservation.objects.all()
+        now = datetime.datetime.utcnow().replace(tzinfo=pytz.utc)
+
+        for reservation in reservations:
+            if reservation.reservation_date < now - timedelta(days=100):
+                # Remove reservations older than 100 days
+                reservation.delete()
+
+    except Exception as e:
+        print(e)
+        logging.warning(e, exc_info=True)

@@ -16,7 +16,7 @@ services:
       - .env.prod
     volumes:
       - .:/code
-      - ./volumes/static:/code/static
+      - ./static:/code/static
     expose:
       - "8000"
     restart: on-failure
@@ -31,6 +31,8 @@ services:
   celery_worker:
     build: .
     command: celery -A ticketonline worker -l info
+    environment:
+      - DJANGO_SETTINGS_MODULE=ticketonline.settings
     depends_on:
       - django 
       - db
@@ -40,6 +42,8 @@ services:
   celery_beat:
     build: .
     command: celery -A ticketonline beat -l info
+    environment:
+      - DJANGO_SETTINGS_MODULE=ticketonline.settings
     depends_on:
       - django
       - db
@@ -49,7 +53,7 @@ services:
   nginx:
     build: ./nginx 
     volumes:
-      - ./volumes/static:/www/static
+      - ./static:/www/static
     ports:
       - 8000:80
     depends_on:

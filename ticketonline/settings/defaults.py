@@ -37,6 +37,9 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'corsheaders',
     'rest_framework',
+    'ticketonline.apps.events',
+    'ticketonline.apps.tickets',
+    'ticketonline.apps.payments',
 ]
 
 MIDDLEWARE = [

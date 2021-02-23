@@ -24,10 +24,11 @@ class TicketType(TicketModel):
     Class stores the data related to ticket type assigned to particular event.
     Class atrributes:
     - amount - the amount of tickets of current type released for particular event
+    - amount_left - the amount of tickets available to be sold
     - event - the event to which tickets refer to
     """
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    amount = models.IntegerField()
+    amount = models.PositiveIntegerField()
     event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name="ticket_types")
 
     def __str__(self):
@@ -46,6 +47,7 @@ class OrderedTicket(TicketModel):
     """
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     reservation = models.ForeignKey(Reservation, on_delete=models.CASCADE, related_name="tickets")
+    event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name="tickets_ordered")
 
     def __str__(self):
         return f"${self.type} ${self.price} EUR. Status: ${self.reservation.status}. " \

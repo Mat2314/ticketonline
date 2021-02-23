@@ -30,6 +30,8 @@ services:
   celery_worker:
     build: .
     command: celery -A ticketonline worker -l info
+    environment:
+      - DJANGO_SETTINGS_MODULE=ticketonline.settings
     depends_on:
       - django 
       - db
@@ -39,6 +41,8 @@ services:
   celery_beat:
     build: .
     command: celery -A ticketonline beat -l info
+    environment:
+      - DJANGO_SETTINGS_MODULE=ticketonline.settings
     depends_on:
       - django
       - db
