@@ -16,7 +16,7 @@ services:
       - .env.prod
     volumes:
       - .:/code
-      - ./static:/code/static
+      - ./volumes/static:/code/static
     expose:
       - "8000"
     restart: on-failure
@@ -53,7 +53,7 @@ services:
   nginx:
     build: ./nginx 
     volumes:
-      - ./static:/www/static
+      - ./volumes/static:/www/static
     ports:
       - 8000:80
     depends_on:

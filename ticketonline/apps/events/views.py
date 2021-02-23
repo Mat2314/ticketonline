@@ -12,6 +12,7 @@ import datetime
 from datetime import timedelta
 from django.core.paginator import Paginator
 from ticketonline.apps.payments.tasks import process_reservation_payment
+from ticketonline.apps.payments.models import Transaction
 
 
 # Create your views here.
@@ -220,11 +221,22 @@ class ReservationViewSet(viewsets.ModelViewSet):
             return JsonResponse({"error": "Reservation status is different than PENDING",
                                  "message": "Status of this reservation does not allow to process a payment for it"})
 
-        # Setup worker to handle payment
-        process_reservation_payment.delay(reservation.id)
+        # Calculate total price for all the tickets
+        tickets = reservation.tickets.all()
+        total_amount = 0
+        for ticket in tickets:
+            total_amount += ticket.price
 
-        return JsonResponse({"ok": "Transaction started", "reservation_id": reservation.id,
-                             "message": "Transaction started successfully. Now wait for payment confirmation"})
+        # Initiate a new transaction
+        new_transaction = Transaction(amount=total_amount, reservation=reservation)
+        new_transaction.save()
+
+        # Setup worker to handle payment
+        process_reservation_payment.delay(reservation.id, new_transaction.id)
+
+        return JsonResponse(
+            {"ok": "Transaction started", "reservation_id": reservation.id, 'transaction_id': str(new_transaction.id),
+             "message": "Transaction started successfully. Now wait for payment confirmation"})
 
     @log_exceptions("Error - could not remove the reservation")
     def delete(self, request):

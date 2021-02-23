@@ -17,7 +17,6 @@ class Transaction(models.Model):
     STATUS = (
         ('COMPLETED', 'COMPLETED'),
         ('PENDING', 'PENDING'),
-        ('CANCELLED', 'CANCELLED'),
         ('ERROR', 'ERROR'),
     )
 

@@ -53,6 +53,8 @@ Every payment has its own date and time. Moreover it stores the amount of money 
 If any error occurs while payment process it is being stored in the database as a error_type.
 
 ## Endpoints
+The application runs by default on `http://127.0.0.1:8000`
+
 URL | METHOD | PAYLOAD | RETURN VALUE | DESCRIPTION |
 ----|--------|---------|--------------|-------------|
 /events/event/ | GET | `current_page`:number, `page_size`: number | `events`: list, `last_page`: number | Endpoint returns a paginated list of all upcoming events available in the database.
@@ -62,8 +64,51 @@ URL | METHOD | PAYLOAD | RETURN VALUE | DESCRIPTION |
 /events/reservation/ | PUT | `reservation_id`: string | `reservation_id`: string, `ok/error`: string | Endpoint handles payment simulation for given reservation.
 /events/reservation/ | DELETE | None | `ok/error`: string | Endpoint enables cancelling the reservation initiated by user. Endpoint verifies if user can cancel this reservation by checking the `reservation_id` session variable kept for 15 minutes since reservation starts.
 /events/stats/ | GET | `event_id`: string | `event`: dict, `ticket_counters`: dict |  Endpoint returns statistics for given event. It counts all the tickets sold for particular event and returns dictionary with ticket type as a key and amount of sold tickets as a value.
+/transactions/list/ | GET | `transaction_id`: string | `status`: string, `transaction_error`: string | Endpoint checks status of the transaction with given id and returns transaction status and error (if any error occurred).
 
-## General application functionality
+## General application functionality with Front End
+Considering the whole application interaction I assume there are going to be a couple of different views 
+presented for the user like the following:
 
+#### Event list
+The list of events sorted by date of the event. User can browse events and change pages (the API returns N elements per page).
+This view would interact with endpoint located at `/events/event/` (GET method).
+
+#### Event details
+The detailed info about certain event. User can read more about the event, see the types of tickets available and decide to 
+make an order. To get the data the app has to interact with endpoint `events/event` (POST method).
+
+In this view the user also can make a reservation by picking certain amount of tickets (up to 5 of each type).
+User can pick tickets and by clicking "Make a reservation" the app makes a request to endpoint `/events/reservation/` (POST method)
+
+
+#### Payment for the reservation
+After booking tickets, user is being redirected to the page summarizing the reservation - listing all the tickets, event data and
+total amount to pay. (Received by requesting endpoint `events/reservation` GET )
+
+User can pay by clicking "Pay" button which originally would call some external payment gateway but in this version it
+is simulating payment process by requesting endpoint `events/reservation` with PUT method.
+Endpoint returns info about starting payment process which is being run as a background task.
+In this moment Front End application should request endpoint `transactions/list` with GET method every N seconds 
+to check whether payment was handled and if the transaction status has been changed.
+
+If the status changed (it is not PENDING anymore) in the final version the server should notify user by email.
+
+#### Statistics
+Statistics are available under `events/stats` endpoint. When entering a statistics view on the Front End side 
+the application should request mentioned endpoint and after receiving certain data referring to particular event
+it should draw a chart with all the tickets sold for this event and amount of particular ticket categories divided by different colors.
 
 ## Further notes
+
+### User authentication
+In this example app, almost all the data is available to anyone. In further versions the authentication should be 
+added for certain endpoints. (Depending on the requirements, for example if statistics should be visible to anybody).
+
+### Email notifications
+Moreover in the final version after initializing a reservation, the user should insert his/her email 
+to be notified about reservation payment progress. Emails should be sent right after the reservation is done and 
+right after the payment status is being changed.
+
+### Ticket identification
+After successfull payment processing the tickets would be sent to user's email with a unique ID each. 

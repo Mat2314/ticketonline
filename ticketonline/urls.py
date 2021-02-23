@@ -20,4 +20,5 @@ from django.conf.urls import url
 urlpatterns = [
     path('admin/', admin.site.urls),
     url(r'^events/', include('ticketonline.apps.events.urls')),
+    url(r'^transactions/', include('ticketonline.apps.payments.urls')),
 ]
