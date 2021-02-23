@@ -110,5 +110,12 @@ Moreover in the final version after initializing a reservation, the user should 
 to be notified about reservation payment progress. Emails should be sent right after the reservation is done and 
 right after the payment status is being changed.
 
+### Potential deserialization
+As the application expects high traffic it would be worth considering to deserialize the database
+so that for example the statistics for each event would not be counted every time the API is called
+but every event would have it's own Statistics table in the database which would not change after the
+event starts so all the stats would be available instantly without performing extra calculations.
+
 ### Ticket identification
 After successfull payment processing the tickets would be sent to user's email with a unique ID each. 
+
